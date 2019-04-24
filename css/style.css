@@ -1,0 +1,13 @@
+*{
+    
+}
+
+
+
+#debug{
+    position: absolute;
+    z-index: 50;
+    background-color: lightgrey;
+    right:0px;
+    margin-right:5px;
+}
