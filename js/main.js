@@ -15,6 +15,7 @@ var gridSelected=false;
 
 testNode.draw(ctx);
 
+
 var lastTime=performance.now();
 var debug=document.getElementById("debug");
 
@@ -102,24 +103,16 @@ function update(){
 
 function drawBackground(){
     var count=Math.trunc(1/zoom)+1;
+    let startX=-Math.round((gridOffset.x/zoom)/backgroundStartSize.width*zoom-0.5)*backgroundStartSize.width;
+    let startY=-Math.round((gridOffset.y/zoom)/backgroundStartSize.height*zoom-1)*backgroundStartSize.height;
+    console.log(startX);
 
-    console.log("count : "+count);
-
-    //corners :
-    /*ctx.drawImage(background,gridOffset.x+backgroundStartSize.width*zoom*count,gridOffset.y+backgroundStartSize.height*zoom*count,backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
-    ctx.drawImage(background,gridOffset.x+backgroundStartSize.width*zoom*count,gridOffset.y-backgroundStartSize.height*zoom*(count+1),backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
-    ctx.drawImage(background,gridOffset.x-backgroundStartSize.width*zoom*count,gridOffset.y,backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
-    ctx.drawImage(background,gridOffset.x-backgroundStartSize.width*zoom*count,gridOffset.y-backgroundStartSize.height*zoom*(count+1),backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
-*/
     for (var i=0;i<count;i++){
-        
-
-
         for (var j=0;j<count;j++){
-            ctx.drawImage(background,gridOffset.x+backgroundStartSize.width*zoom*j,gridOffset.y+backgroundStartSize.height*zoom*i,backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
-            ctx.drawImage(background,gridOffset.x+backgroundStartSize.width*zoom*j,gridOffset.y-backgroundStartSize.height*zoom*(i+1),backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
-            ctx.drawImage(background,gridOffset.x-backgroundStartSize.width*zoom*(j+1),gridOffset.y+backgroundStartSize.height*zoom*i,backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
-            ctx.drawImage(background,gridOffset.x-backgroundStartSize.width*zoom*(j+1),gridOffset.y-backgroundStartSize.height*zoom*(i+1),backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
+            ctx.drawImage(background,startX+gridOffset.x+backgroundStartSize.width*zoom*j,startY+gridOffset.y+backgroundStartSize.height*zoom*i,backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
+            ctx.drawImage(background,startX+gridOffset.x+backgroundStartSize.width*zoom*j,startY+gridOffset.y-backgroundStartSize.height*zoom*(i+1),backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
+            ctx.drawImage(background,startX+gridOffset.x-backgroundStartSize.width*zoom*(j+1),startY+gridOffset.y+backgroundStartSize.height*zoom*i,backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
+            ctx.drawImage(background,startX+gridOffset.x-backgroundStartSize.width*zoom*(j+1),startY+gridOffset.y-backgroundStartSize.height*zoom*(i+1),backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
         }
 
     }
