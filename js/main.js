@@ -8,16 +8,42 @@ var canvas=document.getElementById("canvas");
 canvas.width=window.innerWidth-3;
 canvas.height=window.innerHeight-3;
 var ctx=canvas.getContext("2d");
-
+ctx.font = '24px serif';
+ctx.textBaseline="hanging";
+ctx.textAlign="center";
 var zoom=1;
 var gridSelected=false;
 
+
+var charactersDiv=document.getElementById("characters");
+charactersDiv.style.height=canvas.height+"px";
 
 testNode.draw(ctx);
 
 
 var lastTime=performance.now();
 var debug=document.getElementById("debug");
+
+
+function AddMessageNode(){
+    nodes.push(new Node({x:(-gridOffset.x+mousePosition.x)/zoom,y:(-gridOffset.y+mousePosition.y)/zoom},"Message"));
+    closeContextMenu();
+}
+
+function AddQuestNode(){
+    nodes.push(new Node({x:(-gridOffset.x+mousePosition.x)/zoom,y:(-gridOffset.y+mousePosition.y)/zoom},"Quest"));
+    closeContextMenu();
+}
+
+
+function AddCharacter(){
+    closeContextMenu();
+}
+
+function closeContextMenu(){
+    contextmenu.style.display="none";
+    contextMenuOpen=false;
+}
 
 
 
@@ -92,6 +118,9 @@ function update(){
         nodes[i].draw(ctx);
     }
     
+
+    
+
     //console.log(hoveredNode);
 
     
@@ -101,13 +130,46 @@ function update(){
 }
 
 
+window.onkeydown=function(event){
+    if (editing.node!=null){
+        switch(editing.event){
+            case EditEvent.name:
+            var str=editing.node.name.content;
+            switch(event.keyCode){
+                case 13:
+                    editing.node.name.selected=false;
+                    editing.node=null;
+                    editing.event=null;
+                break;
+
+                case 8:
+                    editing.node.name.content=str.slice(0,str.length-1);
+                break;
+
+                default:
+                    if (event.key.length<=1){
+                        editing.node.name.content+=event.key;
+                    }
+                    
+                break;
+            }
+                
+
+            break;
+            case EditEvent.message:
+
+            break;
+        }
+    }
+}
+
+
 function drawBackground(){
     var count=Math.trunc(1/zoom)+1;
     let startX=-Math.round((gridOffset.x/zoom)/backgroundStartSize.width*zoom-0.5)*backgroundStartSize.width;
-    let startY=-Math.round((gridOffset.y/zoom)/backgroundStartSize.height*zoom-1)*backgroundStartSize.height;
-    console.log(startX);
+    let startY=-Math.round((gridOffset.y/zoom)/backgroundStartSize.height*zoom-0.8)*backgroundStartSize.height;
 
-    for (var i=0;i<count;i++){
+    for (var i=0;i<count+1;i++){
         for (var j=0;j<count;j++){
             ctx.drawImage(background,startX+gridOffset.x+backgroundStartSize.width*zoom*j,startY+gridOffset.y+backgroundStartSize.height*zoom*i,backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
             ctx.drawImage(background,startX+gridOffset.x+backgroundStartSize.width*zoom*j,startY+gridOffset.y-backgroundStartSize.height*zoom*(i+1),backgroundStartSize.width*zoom,backgroundStartSize.height*zoom);
@@ -132,22 +194,63 @@ window.onmousedown=function(event){
         nodeOffset={x:event.clientX-selectedNode.x*zoom,y:event.clientY-selectedNode.y*zoom};
     }else{
         gridSelected=true;
+
+        if(contextMenuOpen){
+            if (event.target==canvas){
+                contextmenu.style.display="none";
+                contextMenuOpen=false;
+            }
+        }
+        if (editing.node!=null){
+            editing.node.name.selected=false;
+            editing.node=null;
+            editing.event=null;
+        }
     }
+}
+
+var editing={
+    node:null,
+    event:null
+};
+
+var EditEvent={
+    name:0,
+    message:1
 }
 
 window.onmouseup=function(){
     event.preventDefault();
-    if (selectedNode!=null){
-        selectedNode=null;
-    }else if (gridSelected){
-        gridSelected=false;
+    selectedNode=null;
+    gridSelected=false;
+    if (hoveredNode!=null){
+        if (hoveredNode.checkNameCollision(mousePosition)){
+            editing.node=hoveredNode;
+            editing.event=EditEvent.name;
+            hoveredNode.name.selected=true;
+        }
     }
+    
 }
 
 window.onmousewheel=function(event){
-    if (zoom-(event.deltaY/300)>0.2){
-        zoom+=-(event.deltaY)/300;
+    if (zoom-(event.deltaY/500)>0.2 && zoom-(event.deltaY/500)<2){
+        zoom+=-(event.deltaY)/500;
         console.log("zoom",zoom);
     }
 }
 
+var contextmenu=document.getElementById("menu");
+var contextMenuOpen=false;
+window.oncontextmenu=function(event){
+    event.preventDefault();
+    contextmenu.style.display="block";
+    contextmenu.style.left=event.pageX+"px";
+    contextmenu.style.top=event.pageY+"px";
+    contextMenuOpen=true;
+}
+
+window.onclick=function(event){
+    event.preventDefault();
+    
+}

@@ -1,8 +1,8 @@
 
 var NodeType={square:0,circle:1}
 
-var NODE_WIDTH=50;
-var NODE_HEIGHT=50;
+var NODE_WIDTH=200;
+var NODE_HEIGHT=300;
 
 
 
@@ -12,15 +12,21 @@ var Node=function (){
 
     //constructor
 
-    var Node=function(position){
-        this.name="newNode";
+    var Node=function(position,name="New node"){
         this.x=position.x;
         this.y=position.y;
         this.type=NodeType.square;
         this.width=NODE_WIDTH;
         this.height=NODE_HEIGHT;
         this.radius=NODE_WIDTH;
-
+        this.name={
+            content:name,
+            size:{
+                width:this.width,
+                height:24
+            },
+            selected:false
+        }
         this.color="red";
         
         this.inputLinks=[];
@@ -31,6 +37,8 @@ var Node=function (){
     }
 
     Node.prototype.draw=function(ctx){
+        ctx.fillStyle="lightblue";
+        ctx.font=24*zoom+"px serif";
         switch(this.type){
             case NodeType.square:
                 ctx.fillRect(gridOffset.x+this.x*zoom,gridOffset.y+this.y*zoom,this.width*zoom,this.height*zoom);
@@ -42,6 +50,13 @@ var Node=function (){
                 ctx.stroke();
             break;
         }
+        
+        if (this.name.selected){
+            ctx.fillStyle="grey";
+        }else{
+            ctx.fillStyle="black";
+        }
+        ctx.fillText(this.name.content, gridOffset.x+(this.x+this.width/2)*zoom,gridOffset.y+this.y*zoom);
     }
 
     Node.prototype.checkMouseCollision=function(mousePosition){
@@ -56,6 +71,10 @@ var Node=function (){
         }
 
         return colliding;
+    }
+
+    Node.prototype.checkNameCollision=function(mousePosition){
+        return (mousePosition.x>=this.x*zoom+gridOffset.x) && (mousePosition.x<=(this.x+this.name.size.width)*zoom+gridOffset.x) && (mousePosition.y>=this.y*zoom+gridOffset.y) && (mousePosition.y<=(this.y+this.name.size.height)*zoom+gridOffset.y);
     }
 
     

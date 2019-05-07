@@ -1,13 +1,28 @@
-*{
-    
-}
-
-
-
 #debug{
     position: absolute;
     z-index: 50;
     background-color: lightgrey;
     right:0px;
     margin-right:5px;
+}
+
+#menu {
+  width: 120px;
+  box-shadow: 0 4px 5px 3px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  display: none;
+
+}
+
+#menu button{
+    width: 120px;
+
+}
+
+#characters{
+    width:200px;
+    right:0px;
+    position: absolute;
+    background-color:whitesmoke;
+    display: block;
 }
