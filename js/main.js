@@ -3,10 +3,11 @@ const EditEvent={
     message:1
 }
 
+const saveFileName="DialogueSave.json";
 
-var testNode=new Node({x:0,y:0});
 
 var gridOffset={x:0,y:0};
+
 
 var canvas=document.getElementById("canvas");
 canvas.width=window.innerWidth-3;
@@ -18,42 +19,102 @@ ctx.textBaseline="hanging";
 var zoom=1;
 var gridSelected=false;
 
+var copiedNode=null;
+
 
 var charactersDiv=document.getElementById("characters");
 charactersDiv.style.height=canvas.height+"px";
 
-testNode.draw(ctx);
 
 
 var lastTime=performance.now();
 var debug=document.getElementById("debug");
 
 
+const charas=document.getElementById("charas");
+
 function AddMessageNode(){
-    let node=new Node({x:(-gridOffset.x+mousePosition.x)/zoom,y:(-gridOffset.y+mousePosition.y)/zoom},"Message");
+    let node=new Node("Message");
     node.addInput("Character",PropertyType.CharacterReference);
-    node.addInput("Content",PropertyType.InputField)
+    node.addInput("Content",PropertyType.InputField);
+    node.addOutput("",PropertyType.MessageReference);
     nodes.push(node);
     closeContextMenu();
 }
 
 function AddQuestNode(){
-    nodes.push(new Node({x:(-gridOffset.x+mousePosition.x)/zoom,y:(-gridOffset.y+mousePosition.y)/zoom},"Quest"));
+    nodes.push(new Node("Quest"));
     closeContextMenu();
 }
 
+function AddDialogueNode(){
+    let node=new Node("Dialogue");
+    node.addButton("Add condition",function(){
+        this.node.addInput("Condition",PropertyType.Condition,false);
+    });
+    node.addButton("Add message",function(){
+        this.node.addInput("Message",PropertyType.MessageReference);
+    })
+    node.addInput("Message",PropertyType.MessageReference);
+    nodes.push(node);
+    closeContextMenu();
+
+}
 
 function AddCharacter(){
-
-    closeContextMenu();
+    characters.push(new Character());
 }
 
 function closeContextMenu(){
-    contextmenu.style.display="none";
-    contextMenuOpen=false;
+    if (contextMenu!=null){
+        contextMenu.style.display="none";
+        contextMenuOpen=false;
+    }
+}
+
+function DeleteNode(){
+    let nodeIndex=nodes.lastIndexOf(Node.selectedNode);
+
+    nodes.splice(nodeIndex,1);
+    Node.selectedNode=null;
+    Node.hoveredNode=null;
+    closeContextMenu();
 }
 
 
+function RenameNode(){
+    editing.node=Node.selectedNode;
+    editing.event=EditEvent.name;
+    Node.selectedNode.name.selected=true;
+    closeContextMenu();
+}
+
+
+function CopyNode(){
+    copiedNode=Node.selectedNode;
+    closeContextMenu();
+}
+
+
+
+
+function PasteNode(){
+    if (copiedNode!=null){
+        let node=new Node(copiedNode.name.content);
+        node.type=copiedNode.type;
+        node.width=copiedNode.width;
+        node.height=copiedNode.height;
+        node.radius=copiedNode.radius;
+        node.name={content:copiedNode.name.content,size:{width:copiedNode.name.size.width,height:copiedNode.name.size.height},selected:false};
+        node.color=copiedNode.color;
+        node.img=copiedNode.img;
+        node.selected=false;
+        node.inputs=copiedNode.inputs.slice();
+        node.outputs=copiedNode.outputs.slice();
+        nodes.push(node);
+        closeContextMenu();
+    }
+}
 
 var backgroundStartSize;
 
@@ -81,8 +142,7 @@ setInterval(function(){
 
 var nodes=[];
 var characters=[];
-
-nodes.push(testNode);
+var links=[];
 
 
 
@@ -93,17 +153,20 @@ var mousePosition={x:-1000,y:-1000};
 
 
 window.onmousemove=function(event){
-    event.preventDefault();
     mousePosition={x:event.clientX,y:event.clientY};
 
-    if (selectedNode!=null){
+
+    if (mousePosition.x<window.innerWidth-200){
+        event.preventDefault();
+    }
+
+    if (selectedNode!=null && !draggingLink){
         selectedNode.x=(mousePosition.x-nodeOffset.x)/zoom;
         selectedNode.y=(mousePosition.y-nodeOffset.y)/zoom;
     }else if(gridSelected){
         gridOffset.x+=event.movementX;
         gridOffset.y+=event.movementY;
     }
-
 }
 
 function update(){
@@ -122,25 +185,39 @@ function update(){
 
     for (var i=0,length=nodes.length;i<length;i++){
         let node=nodes[i];
-        if (node.checkMouseCollision(mousePosition)){
-            hoveredNode=node;
-        }
+        node.checkMouseCollision(mousePosition);
         ctx.fillStyle=node.color;
-
-
-        if (node.x<(-gridOffset.x*zoom+window.innerWidth/zoom) && node.x>-gridOffset.x-node.width && node.y<(-gridOffset.y+window.innerHeight) && node.y>-gridOffset.y-node.height){
+        
+        let screenPos={x:(node.x+node.width)*zoom+gridOffset.x,y:(node.y+node.height)*zoom+gridOffset.y};
+        if (screenPos.x>0 && screenPos.x<window.innerWidth && screenPos.y>0 && screenPos.y<window.innerHeight+node.height*zoom){
+            node.visible=true;
+        }else{
+            node.visible=false;
+        }
+        if (node.visible){
             node.draw(ctx);
         }
-        
     }
-    
 
-    
-    
+    for (var i=0,length=links.length;i<length;i++){
+        if (links[i].input.node.visible){
+            links[i].draw(ctx);
+        }
+    }
+
+
+    if (draggingLink){
+        ctx.strokeStyle=PropertyColor[NodeLink.currentProperty];
+        ctx.beginPath();
+        ctx.moveTo(gridOffset.x+(origin.node.x+origin.relativePosition.x)*zoom,gridOffset.y+(origin.node.y+origin.relativePosition.y)*zoom);
+        ctx.lineTo(mousePosition.x,mousePosition.y);
+        ctx.stroke();
+    }
 
     lastTime=time;
 }
 
+var ctrlPressed=false;
 
 window.onkeydown=function(event){
     if (editing.node!=null){
@@ -196,6 +273,35 @@ window.onkeydown=function(event){
                 }
             break;
         }
+    }else{
+        switch(event.keyCode){
+            case 46:    //suppr
+                if (Node.selectedNode!=null){
+                    DeleteNode();
+                }
+            break;
+
+            case 17:    //CTRL
+                ctrlPressed=true;
+            break;
+
+            case 83:    //S
+                if (ctrlPressed){
+                    event.preventDefault();
+                    save(saveFileName);
+                }
+                
+            break;
+        }
+    }
+}
+
+
+window.onkeyup=function(event){
+    switch(event.keyCode){
+        case 17:
+            ctrlPressed=false;
+        break;
     }
 }
 
@@ -221,58 +327,72 @@ function drawBackground(){
 
 var selectedNode=null;
 var nodeOffset;
+var hoveredInput=null;
+var draggingLink=false;
+var origin=null;
+
 
 
 window.onmousedown=function(event){
-    event.preventDefault();
-    if (hoveredNode!=null){
-        //deselect previous node
 
-        if (editing.property!=null && editing.property!=hoveredProperty){
-            editing.property.selected=false;
-            editing.property.textSelected="";
+    //on déselectionne la node sélectionnée
+    if (event.target!=canvas){
+        return;
+    }
+
+
+    if (Node.selectedNode!=null){
+        Node.selectedNode.selected=false;
+        Node.selectedNode=null;
+    }
+    if(contextMenuOpen){
+        closeContextMenu();
+    }
     
-        }
-        
-
-
-
-        selectedNode=hoveredNode;
-        nodeOffset={x:event.clientX-selectedNode.x*zoom,y:event.clientY-selectedNode.y*zoom};
-        if (hoveredProperty!=null){
-            editing.node=hoveredNode;
-            editing.property=hoveredProperty;
-            editing.event=EditEvent.message;
-            editing.property.selected=true;
-            if (editing.property.textSelected==""){
-                editing.property.textSelected=editing.property.content;
+    if (event.button==0){
+        if (Node.hoveredNode!=null){
+    
+            if (InputField.hoveredField!=null){
+                InputField.hoveredField.onMouseDown();
+                
+            }else if (NodeInput.hoveredInput!=null){
+                NodeInput.hoveredInput.onMouseDown();
+            }else if (NodeOutput.hoveredOutput!=null){
+                NodeOutput.hoveredOutput.onMouseDown();
+            }else if(Button.hoveredButton!=null){
+                Button.hoveredButton.onMouseDown();
             }else{
-                editing.property.textSelected="";
+                Node.hoveredNode.onMouseDown();
+                canvas.style.cursor="all-scroll";
             }
             
-        }
+        }else{
+            if (mousePosition.x<window.innerWidth-200){
+                gridSelected=true;
+                canvas.style.cursor="grabbing";
+    
+                
+                
         
-    }else{
-        gridSelected=true;
-
-        if(contextMenuOpen){
-            if (event.target==canvas){
-                contextmenu.style.display="none";
-                contextMenuOpen=false;
+                if (editing.node!=null){
+                    editing.node.name.selected=false;
+                    editing.node=null;
+                    editing.event=null;
+                    editing.property.selected=false;
+                    editing.property.textSelected="";
+                }
+        
+                if (draggingLink){
+                    origin=null;
+                    draggingLink=false;
+                }
             }
+            
+    
         }
-        
-
-        if (editing.node!=null){
-            editing.node.name.selected=false;
-            editing.node=null;
-            editing.event=null;
-            editing.property.selected=false;
-            editing.property.textSelected="";
-        }
-
     }
 }
+    
 
 var editing={
     node:null,
@@ -282,17 +402,9 @@ var editing={
 
 
 window.onmouseup=function(){
-    event.preventDefault();
     selectedNode=null;
     gridSelected=false;
-    if (hoveredNode!=null){
-        if (hoveredNode.checkNameCollision(mousePosition)){
-            editing.node=hoveredNode;
-            editing.event=EditEvent.name;
-            hoveredNode.name.selected=true;
-        }
-    }
-    
+    canvas.style.cursor="default";
 }
 
 window.onmousewheel=function(event){
@@ -301,17 +413,111 @@ window.onmousewheel=function(event){
     }
 }
 
-var contextmenu=document.getElementById("menu");
+const gridContextMenu=document.getElementById("gridContextMenu");
 var contextMenuOpen=false;
+
+const nodeContextMenu=document.getElementById("nodeContextMenu");
+var contextMenu;
+
 window.oncontextmenu=function(event){
     event.preventDefault();
-    contextmenu.style.display="block";
-    contextmenu.style.left=event.pageX+"px";
-    contextmenu.style.top=event.pageY+"px";
+
+    //on cache l'ancien contextMenu
+    closeContextMenu();
+
+    //on affiche le bon contextmenu en fonction de ce qui est sélectionné
+    if (Node.hoveredNode!=null){
+        contextMenu=nodeContextMenu;
+        Node.selectedNode=Node.hoveredNode;
+        Node.selectedNode.selected=true;
+    }else{
+
+        contextMenu=gridContextMenu;
+    }
+    contextMenu.style.display="block";
+    contextMenu.style.left=event.pageX+"px";
+    contextMenu.style.top=event.pageY+"px";
     contextMenuOpen=true;
 }
 
 
-function save(){
+function save(fileName){
+    let datajax={
+        file:"../Saves/"+fileName,
+        data:{
+            nodes:[],
+            characters:[]
+        }  
+    };
 
+    //on construit les données à partir des références actuelles
+
+    //nodes
+    for (var i=0,length=nodes.length;i<length;i++){
+        let node=nodes[i];
+        let nodeData={
+            position:{
+                x:node.x,
+                y:node.y
+            },
+            type:node.type,
+            size:{
+                width:node.width,
+                height:node.height
+            },
+            radius:node.radius,
+            name:node.name.content,
+            color:node.color,
+            inputs:[],
+            outputs:[],
+            buttons:[],
+            imgSrc:(node.img!=null?node.img.src:""),
+            id:node.id
+        };
+        
+        //inputs
+        for (var j=0,l=node.inputs.length;j<l;j++){
+            let input=node.inputs[j];
+            let inputData={
+                id:input.id,
+                outputNodeId:(input.link!=null?input.link.output.node.id:-1),
+                outputId:(input.link!=null?input.link.output.id:-1),
+                name:input.name,
+                propertyType:input.propertyType,
+                propertyContent:(input.property!=null?input.property.content:""),
+                color:input.color
+            };
+            nodeData.inputs.push(inputData);
+        }
+
+        //outputs
+        for (var j=0,l=node.outputs.length;j<l;j++){
+            let output=node.outputs[j];
+            let outputData={
+                id:output.id,
+                name:output.name,
+                propertyType:output.propertyType,
+                color:output.color
+            };
+            nodeData.outputs.push(outputData);
+        }
+
+        datajax.data.nodes.push(nodeData);
+    }
+
+    //characters
+
+    console.log(datajax);
+
+    $.ajax({
+        type: 'post',
+        url: 'php/saveToJson.php',
+        data: JSON.stringify(datajax),
+        contentType: "application/json; charset=utf-8",
+        success: function (data) {
+            console.log(data);
+        }
+    })
+
+    
 }

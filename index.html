@@ -15,19 +15,37 @@
 
         </div>
 
-        <div id="menu">
+        <div id="gridContextMenu" class="contextMenu">
             <ul>
-              <li><button onclick="AddMessageNode();">Message</button></li>
-              <li><button onclick="AddQuestNode();">Quest</button></li>
-              <li><button onclick="AddCharacter();">Character</button></li>
+                <li><button onclick="AddMessageNode();">Message</button></li>
+                <li><button onclick="AddQuestNode();">Quest</button></li>
+                <li><button onclick="AddDialogueNode();">Dialogue</button></li>
+                <li><button onclick="PasteNode();">Paste</button></li>
             </ul>
-          </div>
+        </div>
+
+
+        <div id="nodeContextMenu" class="contextMenu">
+            <ul>
+                <li><button onclick="DeleteNode();">Delete</button></li>
+                <li><button onclick="RenameNode();">Rename</button></li>
+                <li><button onclick="CopyNode();">Copy</button></li>
+            </ul>
+
+        </div>
 
         <div id="characters">
             <div style="text-align: center;">
-                <label style="font-size: 24px;text-align: center;">Characters</label>
+                <label style="font-size: 24px;">Characters</label>
             </div>
-            
+
+            <div id="charas">
+
+            </div>
+
+            <button style="margin:10px;" onclick="AddCharacter();">
+                +
+            </button>
 
         </div>
 
@@ -35,8 +53,10 @@
 
         </canvas>
 
-        
+        <script src="js/jquery-3.2.1.js"></script>
         <script src="js/Node.js"></script>
+        <script src="js/Button.js"></script>
+        <script src="js/Character.js"></script>
         <script src="js/NodeInput.js"></script>
         <script src="js/InputField.js"></script>
         <script src="js/NodeOutput.js"></script>

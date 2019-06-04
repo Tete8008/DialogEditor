@@ -4,6 +4,7 @@ const TextAlignment={Left:"left",Right:"right",Center:"center"};
 
 //class
 var InputField=function(){
+
     //contructor
     var InputField=function(node,position,size,textAlignment=TextAlignment.Left,fontSize=24){
         this.textAlignment=textAlignment;
@@ -17,6 +18,11 @@ var InputField=function(){
         this.textSelected="";
         return this;
     }
+
+
+    //static fields
+    InputField.hoveredField=null;
+    InputField.selectedText="";
 
     InputField.prototype.draw=function(ctx){
         ctx.textAlign=this.textAlignment;
@@ -42,12 +48,8 @@ var InputField=function(){
         ctx.fillStyle="cornflowerblue";
         if (this.textSelected!=""){
             let textSize=ctx.measureText(this.content);
-            ctx.fillRect(gridOffset.x+(localOffset+this.relativePosition.x+this.node.x)*zoom,gridOffset.y+(this.relativePosition.y+this.node.y)*zoom,textSize.width*zoom,this.fontSize*zoom);
+            ctx.fillRect(gridOffset.x+(localOffset+this.relativePosition.x+this.node.x)*zoom,gridOffset.y+(this.relativePosition.y+this.node.y)*zoom,textSize.width,this.fontSize*zoom);
             ctx.fillStyle="white";
-
-           
-
-            
         }else{
             ctx.fillStyle="black";
         }
@@ -79,9 +81,6 @@ var InputField=function(){
             
             index++;
         }
-
-        
-
     }
 
 
@@ -90,12 +89,14 @@ var InputField=function(){
         let y=(this.node.y+this.relativePosition.y)*zoom+gridOffset.y;
         let colliding=(mousePosition.x>=x) && (mousePosition.x<=x+this.size.width*zoom) && (mousePosition.y>=y) && (mousePosition.y<=y+this.size.height*zoom);
         if (colliding){
-            canvas.style.cursor="text";
-            hoveredProperty=this;
+            if (InputField.hoveredField==null){
+                this.onMouseEnter();
+            }
+            
         }else{
-            canvas.style.cursor="default";
-            window.onclick=null;
-            hoveredProperty=null;
+            if (InputField.hoveredField==this){
+                this.onMouseLeave();
+            }
         }
         this.hovered=colliding;
         
@@ -104,10 +105,35 @@ var InputField=function(){
 
     InputField.prototype.select=function(on){
         this.selected=on;
-
     }
 
 
+    InputField.prototype.onMouseEnter=function(){
+        canvas.style.cursor="text";
+        InputField.hoveredField=this;
+    }
+
+
+    InputField.prototype.onMouseLeave=function(){
+        canvas.style.cursor="default";
+        InputField.hoveredField=null;
+    }
+
+
+    InputField.prototype.onMouseDown=function(){
+
+        editing.node=Node.hoveredNode;
+        editing.property=this;
+        editing.event=EditEvent.message;
+        editing.property.selected=true;
+
+        if (editing.property.textSelected==""){
+            editing.property.textSelected=editing.property.content;
+        }else{
+            editing.property.textSelected="";
+            
+        }
+    }
 
 
     return InputField;

@@ -6,7 +6,7 @@
     margin-right:5px;
 }
 
-#menu {
+.contextMenu {
   width: 120px;
   box-shadow: 0 4px 5px 3px rgba(0, 0, 0, 0.2);
   position: absolute;
@@ -14,7 +14,7 @@
 
 }
 
-#menu button{
+.contextMenu button{
     width: 120px;
 
 }
@@ -25,4 +25,21 @@
     position: absolute;
     background-color:whitesmoke;
     display: block;
+}
+
+.character{
+    
+    overflow: hidden;
+    margin:10px;
+}
+
+.character img{
+    width:100%;
+    max-width:100px;
+    max-height:200px;
+}
+
+.souschara{
+    display:inline-block;
+    vertical-align: top;
 }
