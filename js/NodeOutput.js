@@ -6,7 +6,7 @@ var NodeOutput=function(){
 
     var NodeOutput=function(node,name,propertyType,id=NodeOutput.lastId++){
         this.name=name;
-        this.link=null;
+        this.links=[];
         this.propertyType=propertyType;
         this.node=node;
         let outputsCount=node.outputs.length;
@@ -110,20 +110,20 @@ var NodeOutput=function(){
                     input=origin;
                     output=this;
                 }else{
-                    input=this;
-                    output=origin;
+                    console.log("wut");
+                    return;
                 }
 
 
                 if (origin.link!=null){
-                    origin.link.output.link=null;
+                    origin.link.output.links.splice(origin.link.output.links.lastIndexOf(origin.link),1);
                     links.splice(links.lastIndexOf(origin.link),1);
                 
                 }
 
                 let link=new NodeLink(input,output,PropertyColor[NodeLink.currentProperty]);
                 origin.link=link;
-                this.link=link;
+                this.links.push(link);
                 links.push(link);
             }else{
                 console.log("couldn't create link");
@@ -139,6 +139,15 @@ var NodeOutput=function(){
             NodeLink.currentProperty=this.propertyType;
 
         }
+    }
+
+
+    NodeOutput.prototype.removeLinks=function(){
+        for (var i=0,c=this.links.length;i<c;i++){
+            this.links[i].input.link=null;
+            links.splice(links.lastIndexOf(this.links[i]),1);
+        }
+        this.links=[];
     }
 
     return NodeOutput;

@@ -208,6 +208,46 @@ var Node=function (){
             yOffset+=NODE_INPUT_HEIGHT;
         }
     }
+
+
+    Node.prototype.getInputById=function(id){
+        let input=null;
+        for (var i=0,l=this.inputs.length;i<l;i++){
+            if (this.inputs[i].id==id){
+                input=this.inputs[i];
+                break;
+            }
+        }
+        return input;
+    }
+    
+    Node.prototype.getOutputById=function(id){
+        let output=null;
+        for (var i=0,l=this.outputs.length;i<l;i++){
+            if (this.outputs[i].id==id){
+                output=this.outputs[i];
+                break;
+            }
+        }
+        return output;
+    }
+
+    Node.prototype.delete=function(){
+        //remove links
+        for (var i=0,l=this.inputs.length;i<l;i++){
+            let input=this.inputs[i];
+            input.removeLink();
+        }
+
+        for (var i=0,l=this.outputs.length;i<l;i++){
+            let output=this.outputs[i];
+            output.removeLinks();
+        }
+
+        //remove from nodes array
+        let nodeIndex=nodes.lastIndexOf(this);
+        nodes.splice(nodeIndex,1);
+    }
     
     return Node;
 }();

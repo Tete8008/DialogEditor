@@ -23,7 +23,8 @@ var copiedNode=null;
 
 
 var charactersDiv=document.getElementById("characters");
-charactersDiv.style.height=canvas.height+"px";
+charactersDiv.style.height=canvas.height-25+"px";
+charactersDiv.style.overflowY="scroll";
 
 
 
@@ -73,9 +74,8 @@ function closeContextMenu(){
 }
 
 function DeleteNode(){
-    let nodeIndex=nodes.lastIndexOf(Node.selectedNode);
-
-    nodes.splice(nodeIndex,1);
+    Node.selectedNode.delete();
+    //reset
     Node.selectedNode=null;
     Node.hoveredNode=null;
     closeContextMenu();
@@ -442,6 +442,7 @@ window.oncontextmenu=function(event){
 
 
 function save(fileName){
+    canvas.style.cursor="wait";
     let datajax={
         file:"../Saves/"+fileName,
         data:{
@@ -467,13 +468,19 @@ function save(fileName){
             },
             radius:node.radius,
             name:node.name.content,
-            color:node.color,
             inputs:[],
             outputs:[],
             buttons:[],
             imgSrc:(node.img!=null?node.img.src:""),
-            id:node.id
+            id:node.id,
+            color:node.color
         };
+
+        //character reference
+        if (node.character!=null){
+            nodeData.characterId=node.character.id;
+        }
+
         
         //inputs
         for (var j=0,l=node.inputs.length;j<l;j++){
@@ -484,8 +491,7 @@ function save(fileName){
                 outputId:(input.link!=null?input.link.output.id:-1),
                 name:input.name,
                 propertyType:input.propertyType,
-                propertyContent:(input.property!=null?input.property.content:""),
-                color:input.color
+                propertyContent:(input.property!=null?input.property.content:"")
             };
             nodeData.inputs.push(inputData);
         }
@@ -496,8 +502,7 @@ function save(fileName){
             let outputData={
                 id:output.id,
                 name:output.name,
-                propertyType:output.propertyType,
-                color:output.color
+                propertyType:output.propertyType
             };
             nodeData.outputs.push(outputData);
         }
@@ -506,8 +511,16 @@ function save(fileName){
     }
 
     //characters
+    for (var i=0,l=characters.length;i<l;i++){
+        let character=characters[i];
+        let characterData={
+            id:character.id,
+            name:character.name,
+            iconSrc:character.iconSrc
+        };
+        datajax.data.characters.push(characterData);
+    }
 
-    console.log(datajax);
 
     $.ajax({
         type: 'post',
@@ -516,8 +529,155 @@ function save(fileName){
         contentType: "application/json; charset=utf-8",
         success: function (data) {
             console.log(data);
+            canvas.style.cursor="default";
         }
-    })
+    })   
+}
 
-    
+const fileNameInput=document.getElementById("fileNameInput");
+document.getElementById("saveAsButton").onclick=function(){
+    let fileName=fileNameInput.value;
+    if (fileName==""){return;}
+
+    if (!fileName.endsWith(".json")){
+        fileName+=".json";
+    }
+    save(fileName);
+}
+
+document.getElementById("saveButton").onclick=function(){
+    if (currentFileName!=""){
+        save(currentFileName);
+    }else {
+        console.log("enter a name please ");
+    }
+}
+
+document.getElementById("newButton").onclick=function(){
+    clearAll();
+    openFileSelect.value="";
+}
+
+var currentFileName="";
+const openFileSelect=document.getElementById("openFileSelect");
+openFileSelect.onchange=function(){
+    if (this.value!=""){
+        canvas.style.cursor="wait";
+        clearAll();
+        currentFileName=this.value;
+        $.getJSON("Saves/"+this.value,function(data){
+            console.log(data);
+            let nodesData=data.nodes;
+
+            //on recrée toutes les nodes et on assigne les données
+            for (var i=0,l=nodesData.length;i<l;i++){
+                let nodeData=nodesData[i];
+                
+
+
+                let node=new Node();
+                node.x=nodeData.position.x;
+                node.y=nodeData.position.y;
+                node.type=nodeData.type;
+                node.width=nodeData.size.width;
+                node.height=nodeData.size.height;
+                node.radius=nodeData.radius;
+                node.name.content=nodeData.name;
+                node.color=nodeData.color;
+                if (nodeData.imgSrc!=""){
+                    node.img=new Image();
+                    node.img.src=nodeData.imgSrc;
+                }
+                
+                node.id=nodeData.id;
+
+                for (var j=0,c=nodeData.inputs.length;j<c;j++){
+                    let inputData=nodeData.inputs[j];
+                    let input=new NodeInput(node,inputData.name,inputData.propertyType,inputData.id);
+                    if (input.property!=null){
+                        input.property.content=inputData.propertyContent;
+                    }
+                    node.inputs.push(input);   
+                }
+
+                for (var j=0,c=nodeData.outputs.length;j<c;j++){
+                    let outputData=nodeData.outputs[j];
+                    let output=new NodeOutput(node,outputData.name,outputData.propertyType,outputData.id);
+                    node.outputs.push(output);   
+                }
+
+                nodes.push(node);
+            }
+            
+            //on fait les links une fois que toutes les nodes sont là
+            for (var i=0,l=nodesData.length;i<l;i++){
+                let nodeData=nodesData[i];
+                let node=nodes[i];
+                for (var j=0,c=nodeData.inputs.length;j<c;j++){
+                    let inputData=nodeData.inputs[j];
+                    let input=node.inputs[j];
+                    console.log(inputData);
+                    if (inputData.outputNodeId!=-1){
+                        let outputNode=getNodeById(inputData.outputNodeId);
+                        console.log(outputNode);
+                        let output=outputNode.getOutputById(inputData.outputId);
+                        let link=new NodeLink(input,output,PropertyColor[input.propertyType]);
+                        input.link=link;
+                        output.links.push(link);
+                        links.push(link);
+                    }
+                }
+            }
+
+            let charactersData=data.characters;
+
+            //characters
+            for (var i=0,l=charactersData.length;i<l;i++){
+                let characterData=charactersData[i];
+                let character=new Character(characterData.name,characterData.id,characterData.iconSrc);
+                characters.push(character);
+            }
+
+            //on réassigne les références aux characters
+            for (var i=0,l=nodesData.length;i<l;i++){
+                let nodeData=nodesData[i];
+                if (nodeData.hasOwnProperty("characterId")){
+                    let character=getCharacterById(nodeData.characterId);
+                    nodes[i].character=character;
+                    character.references.push(nodes[i]);
+                }
+            }
+
+            canvas.style.cursor="default";
+        });
+    }
+}
+
+
+function clearAll(){
+    nodes=[];
+    links=[];
+}
+
+
+function getNodeById(id){
+    let node=null;
+    for (var i=0,l=nodes.length;i<l;i++){
+        if (nodes[i].id==id){
+            node=nodes[i];
+            break;
+        }
+    }
+    return node;
+}
+
+function getCharacterById(id){
+    let character=null;
+    for (var i=0,l=characters.length;i<l;i++){
+        if (characters[i].id==id){
+            character=characters[i];
+            break;
+        }
+    }
+    return character;
 }

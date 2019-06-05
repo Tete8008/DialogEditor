@@ -20,6 +20,7 @@
 }
 
 #characters{
+    top:26px;
     width:200px;
     right:0px;
     position: absolute;
@@ -42,4 +43,20 @@
 .souschara{
     display:inline-block;
     vertical-align: top;
+}
+
+#mainMenu{
+    position: absolute;
+    top:0px;
+    left:0px;
+    height:25px;
+    width:100%;
+    background-color: white;
+    border-bottom: 1px ridge grey;
+}
+
+#mainMenu>*{
+    display: inline-block;
+    margin-left:10px;
+    margin-right:10px;
 }

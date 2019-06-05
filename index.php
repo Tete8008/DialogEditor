@@ -10,6 +10,38 @@
     </head>
     <body>
 
+        <div id="mainMenu">
+            <input id="newButton" type="button" value="New"/>
+            |
+            <select id="openFileSelect">
+                <option value="" selected disabled hidden>Open</option>
+                <?php
+                if ($handle = opendir('Saves/')) {
+
+                    while (false !== ($entry = readdir($handle))) {
+                
+                        if ($entry != "." && $entry != "..") {
+                
+                            echo "<option value=".$entry.">".$entry."</option>\n";
+                        }
+                    }
+                
+                    closedir($handle);
+                }
+                ?>
+                
+            </select>
+            |
+            <div>
+                <input id="fileNameInput" type="text" placeholder="file name"/>
+                <input id="saveAsButton" type="button" value="Save as"/>
+            </div>
+            |
+            <input id="saveButton" type="button" value="Save"/>
+
+        </div>
+
+
         <div id="debug">
             
 

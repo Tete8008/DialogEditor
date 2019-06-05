@@ -105,31 +105,31 @@ var NodeInput=function(){
 
         if (draggingLink){
             
-                if (origin.propertyType==this.propertyType){
-                    let input;
-                    let output;
-                    if (origin.constructor.name=="NodeInput"){
-                        input=origin;
-                        output=this;
-                    }else{
-                        input=this;
-                        output=origin;
-                    }
-                    
-                
-                    if (this.link!=null){
-                        this.link.output.link=null;
-                        links.splice(links.lastIndexOf(this.link),1);
-                    
-                    }
-                    let link=new NodeLink(input,output,PropertyColor[NodeLink.currentProperty]);
-                    origin.link=link;
-                    this.link=link;
-                    links.push(link);
+            if (origin.propertyType==this.propertyType){
+                let input;
+                let output;
+                if (origin.constructor.name=="NodeOutput"){
+                    input=this;
+                    output=origin;
                 }else{
-                    console.log("couldn't create link");
+                    console.log("wat");
+                    return;
                 }
+                
             
+                if (this.link!=null){
+                    this.link.output.links.splice(this.link.output.links.lastIndexOf(this.link),1);
+                    links.splice(links.lastIndexOf(this.link),1);
+                
+                }
+                let link=new NodeLink(input,output,PropertyColor[NodeLink.currentProperty]);
+                origin.links.push(link);
+                this.link=link;
+                links.push(link);
+            }else{
+                console.log("couldn't create link");
+            }
+        
             origin.checkMouseCollision(mousePosition);
             draggingLink=false;
             origin=null;
@@ -138,10 +138,17 @@ var NodeInput=function(){
             draggingLink=true;
             origin=this;
             NodeLink.currentProperty=this.propertyType;
-        }
-
-        
+        }        
     }
+
+    NodeInput.prototype.removeLink=function(){
+        if (this.link!=null){
+            this.link.output.links.splice(this.link.output.links.lastIndexOf(this.link),1);
+            links.splice(links.lastIndexOf(this.link),1);
+            this.link=null;
+        }
+    }
+
 
     return NodeInput;
 }();

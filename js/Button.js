@@ -29,8 +29,6 @@ var Button=function(){
         ctx.fillStyle="green";
         let localOffset=0;
             
-                
-        let textSize=ctx.measureText(this.content);
         ctx.fillStyle=this.color;
         ctx.fillRect(gridOffset.x+(localOffset+this.relativePosition.x+this.node.x)*zoom,gridOffset.y+(this.relativePosition.y+this.node.y)*zoom,this.size.width*zoom,24*zoom);
         ctx.fillStyle="black";

@@ -2,9 +2,9 @@
 //class
 var Character=function(){
     //contructor
-    var Character=function(name="Character"){
+    var Character=function(name="Character",id=Character.lastId++,iconSrc="img/defaultCharacter.jpg"){
         this.name=name;
-        this.iconSrc="img/defaultCharacter.jpg";
+        this.iconSrc=iconSrc;
         let charaDiv=document.createElement("div");
         charaDiv.classList.add("character");
 
@@ -50,8 +50,11 @@ var Character=function(){
         this.icon=img;
         this.div=charaDiv;
         this.references=[];
+        this.id=id;
         return this;
     }
+
+    Character.lastId=0;
 
     Character.prototype.setIconSrc=function(iconSrc){
         this.iconSrc=iconSrc;
@@ -60,6 +63,11 @@ var Character=function(){
 
     Character.prototype.removeCharacter=function(){
         //check for references...
+        for (var i=0,l=this.references.length;i<l;i++){
+            this.references[i].delete();
+        }
+
+
         this.div.parentElement.removeChild(this.div);
 
     }
@@ -73,6 +81,7 @@ var Character=function(){
         chara.y=-gridOffset.y+(window.innerHeight/2-chara.height/2)/zoom;
         chara.addOutput("",PropertyType.CharacterReference);
         chara.setImage(this.icon);
+        chara.character=this;
         nodes.push(chara);
         this.references.push(chara);
     }
@@ -84,6 +93,7 @@ var Character=function(){
             this.references[i].name.content=this.name;
         }
     }
+
 
 
     return Character;
